@@ -9,7 +9,7 @@ We have X professional racers, trail runners, mountain climbers, craft beer enth
 ## Our Hiring process
 
 - You will read this ad
-- It piques your interest and think we are bullshitting
+- It piques your interest and think we can't be telling the truth
 - You apply (to verify)
 - If you have amazing open source contributions, we bring you in to meet the team and whiteboard session or
 - You will send us back your code
