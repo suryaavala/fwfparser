@@ -50,6 +50,7 @@ Most important aspect is
 Preferable answer to those questions are **YES**
 
 ## Readings
+- https://norvig.com/21-days.html (this essay is a must, read not optional)
 - https://medium.freecodecamp.org/the-rise-of-the-data-engineer-91be18f1e603
 - https://medium.com/@maximebeauchemin/functional-data-engineering-a-modern-paradigm-for-batch-data-processing-2327ec32c42a
 - https://www.youtube.com/watch?v=23_1WlxGGM4
