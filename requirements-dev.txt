@@ -1,0 +1,9 @@
+bandit==1.6.2
+flake8==3.7.8
+pre-commit==1.20.0
+pre-commit-hooks==2.4.0
+pytest==5.2.2
+
+# Include normal dependencies from requirements.txt. Makes it possible to use
+
+-r requirements.txt

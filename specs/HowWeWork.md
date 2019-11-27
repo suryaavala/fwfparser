@@ -8,7 +8,7 @@ Tenets of good culture
 
 - Trust (Assumption is you will do the right thing, until you break it)
 - Autonomy (Exists because of trust)
-- No Fear of failure 
+- No Fear of failure
 - Collective ownership
 - Free beer (Pun intended)
 - You are not a resource/line item in excel spreadsheet. Hopefully you are an asset.
@@ -29,7 +29,7 @@ Things that should be in place from Iteration 0/Sprint 0 (whatever floats your b
 - No compromise on quality
 - Monitoring and Alerting
 
-### Code 
+### Code
 - Tests (There has to be genuine reason to **not** write tests. Deadline pressure is not an acceptable excuse).
 - CI server running some kind of code quality checks (depends on language)
 - If it is python, this is your bible https://www.python.org/dev/peps/pep-0020/
@@ -59,7 +59,7 @@ Preferable answer to those questions are **YES**
 - https://www.dataengineeringpodcast.com/episode-3-defining-data-engineering-with-maxime-beauchemin/
 
 
-# **KPI/OKR (s) of DET** 
+# **KPI/OKR (s) of DET**
 
 - Write code that works today, tomorrow and every other day
 - Write tests to prove the above
