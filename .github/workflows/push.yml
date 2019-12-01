@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: pytest, safety test, and security scan
-        run: docker build --target security --build-arg MICROSCANNER=${MICROSCANNER} --file Dockerfile -t test .
+        run: docker build --target test --build-arg MICROSCANNER=${MICROSCANNER} --file Dockerfile -t test .
       - name: Docker Login
         run: echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin
       - name: Push Test Image
