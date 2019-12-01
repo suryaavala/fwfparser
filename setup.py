@@ -12,7 +12,7 @@ setup(
     url="https://github.com/suryaavala/fixedwidthfiles",
     description="Parse Fixed width files, convert them to delimited (csv's)",
     long_description=open("README.md").read().strip(),
-    packages=find_packages(),
+    packages=find_packages(exclude=("tests",)),
     install_requires=[
         # just python standard library
     ],

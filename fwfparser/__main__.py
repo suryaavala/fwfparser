@@ -1,19 +1,17 @@
 import sys
 
 
-def main(spec, files=None, output=None, delimiter="\t"):
+def main(spec, file=None, output=None, delimiter="\t"):
     """Parse fixed width files, convert them to csv and write them to 'output'
 
-    Arguments:
-        spec {str} -- path to file describing the specs for fixed width file.
-        See: ../specs/spec.json
-
-    Keyword Arguments:
-        file {str} -- path to fix width file containing data.
-                    If nothing is given, then a random fwf is generated for parsing
-        output {str} -- Path to file where parsed content(output) is written to.
-                    If nothing's given, then output's written to sys.stdout (default: {sys.stdout})
-        delimiter {str} -- field delimiter for csv's/outputs (default: {'\t'})
+    Args:
+        spec (str): path to json file describing the specs for fixed width file.
+                    See: ../example/spec.json for format
+        files (str): path to fix width file containing fixed width data.
+                    Defaults to None, then a random fwf is generated for parsing.
+        output (str): Path to file where parsed content(output) is written to (as delimited).
+                      Defaults to None, then output's written to sys.stdout.
+        delimiter (str, optional): field delimiter for csv's/outputs. Defaults to "\t".
     """
     if output is None:
         output = sys.stdout
