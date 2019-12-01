@@ -1,0 +1,8 @@
+.dockerignore
+.git
+.gitignore
+.github
+.pre-commit-config.yaml
+.pytest_cache
+.vscode
+Makefile
