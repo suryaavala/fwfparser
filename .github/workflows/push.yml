@@ -1,0 +1,27 @@
+env:
+  IMAGE_NAME: fwfparser
+  USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  MICROSCANNER: ${{ secrets.MICROSCANNER }}
+
+on: push
+name: Test Build and Publish
+jobs:
+  tests-build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: pytest, safety test, and security scan
+        run: docker build --target security --build-arg MICROSCANNER=${MICROSCANNER} --file Dockerfile -t test .
+      - name: Docker Login
+        run: echo ${PASSWORD} | docker login -u ${USERNAME} --password-stdin
+      - name: Push Test Image
+        if: success()
+        run: |
+          docker tag test ${USERNAME}/${IMAGE_NAME}:test
+          docker push ${USERNAME}/${IMAGE_NAME}:test
+      - name: Build and Push Prod Image
+        if: success() && github.ref == 'refs/heads/master'
+        run: |
+          docker build --file Dockerfile --target prod --tag ${USERNAME}/${IMAGE_NAME}:latest .
+          docker push ${USERNAME}/${IMAGE_NAME}:latest
