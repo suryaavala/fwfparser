@@ -1,6 +1,7 @@
 import json
 import sys
 import types
+import warnings
 
 
 def valid_cp1252_charInts():
@@ -83,8 +84,37 @@ def validate_specs(specs=None):
         specs["Offsets"] = list(map(int, specs["Offsets"]))
     except ValueError:
         raise ValueError("Not able to convert offsets to ints")
+    for nb in range(len(specs["Offsets"])):
+        if len(str(specs["ColumnNames"][nb])) > int(specs["Offsets"][nb]):
+            warnings.warn(
+                f"{specs['ColumnNames'][nb]} is larger than it's offset, so chopping it off!"
+            )
     OPTIONAL_SPECS.update(specs)
     return OPTIONAL_SPECS
+
+
+def _parse_fwf_line(line=None, offsets=None, padding_char=" "):
+    if not isinstance(line, str):
+        raise TypeError(f"line should be a string")
+    if not isinstance(offsets, list):
+        raise TypeError(f"offsets should be a list")
+    row = []
+    idx_at = 0
+    for col_offset in offsets:
+        row.append(
+            line[idx_at : int(col_offset) + idx_at].strip(padding_char)  # noqa: E203 \
+        )
+        idx_at += int(col_offset)
+    return row
+
+
+def _lazy_read_fwf(fwf_path, encoding, offsets, padding_char):
+    return (
+        _parse_fwf_line(
+            line=fwf_line.strip("\n"), offsets=offsets, padding_char=padding_char
+        )
+        for fwf_line in open(fwf_path, "r", encoding=encoding)
+    )
 
 
 def data_to_csv(
