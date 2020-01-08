@@ -1,7 +1,8 @@
+import json
+
 import pytest
 from fwfparser.__main__ import main
-from fwfparser.fwf import read_fwf, DataFrameF
-import json
+from fwfparser.fwf import DataFrameF, read_fwf
 
 # import os
 
@@ -75,11 +76,25 @@ class TestDataFrameF:
         with open("tests/test_spec_invalid_minimum.json", "r") as specs_file:
             specs = json.loads(specs_file.read())
         for spec_number in specs:
+            if spec_number not in ["1", "2", "3", "4", "5"]:
+                continue
             path = "test.json"
             with open(path, "w") as tmp_file:
                 tmp_file.write(json.dumps(specs[spec_number]))
             with pytest.raises(ValueError):
-                assert DataFrameF().read_fwf(spec_path=path)
+                assert DataFrameF().read_fwf(spec_path=path, fwf_path=VALID_FWF_FILE)
+
+    def test_colnames_larger(self):
+        with open("tests/test_spec_invalid_minimum.json", "r") as specs_file:
+            specs = json.loads(specs_file.read())["mycolumn"]
+        path = "mycolumn.json"
+        with open(path, "w") as tmp_file:
+            tmp_file.write(json.dumps(specs))
+        with pytest.warns(UserWarning) as warn:
+            assert DataFrameF().read_fwf(spec_path=path, fwf_path=VALID_FWF_FILE)
+        assert "mycolumn is larger than it's offset, so chopping it off!" in str(
+            warn[0].message.args[0]
+        )
 
     def test_parse(self, tmpdir):
         DataFrameF().read_fwf(
@@ -90,6 +105,3 @@ class TestDataFrameF:
         with open("test_generated_csv.csv", "r") as g:
             generated = g.read()
         assert valid == generated
-
-
-# TODO: Column name is bigger than the offset?
