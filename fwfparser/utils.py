@@ -1,4 +1,6 @@
 import json
+import sys
+import types
 
 
 def valid_cp1252_charInts():
@@ -50,7 +52,8 @@ def parse_spec_file(spec):
 def validate_specs(specs=None):
     """Verify specs are correct and
     atleast have
-    [ "ColumnNames","Offsets", "FixedWidthEncoding", "IncludeHeader", "DelimitedEncoding"]
+    [ "ColumnNames","Offsets", "FixedWidthEncoding",
+        "IncludeHeader", "DelimitedEncoding"]
 
     Args:
         specs (dict, optional): specs dict from spec file. Defaults to None.
@@ -80,5 +83,29 @@ def validate_specs(specs=None):
         specs["Offsets"] = list(map(int, specs["Offsets"]))
     except ValueError:
         raise ValueError("Not able to convert offsets to ints")
+    OPTIONAL_SPECS.update(specs)
+    return OPTIONAL_SPECS
 
-    return OPTIONAL_SPECS.update(specs)
+
+def data_to_csv(
+    data, csv_path="", header=True, sep="\t", encoding=sys.getdefaultencoding()
+):
+    if not csv_path:
+        raise ValueError("path to csv should be given")
+    if not isinstance(data, (list, types.GeneratorType)):
+        raise TypeError("data must be a list or generator")
+    with open(csv_path, "w", encoding=encoding) as csv_file:
+        # csv_writer = csv.writer(
+        #     csv_file, delimiter=sep, escapechar='//', quoting=csv.QUOTE_NONE)
+        if isinstance(data, list):
+            head = data[0]
+            data = data[1:]
+        else:
+            head = next(data)
+        if header:
+            # csv_writer.writerow(head)
+            csv_file.write(sep.join(head))
+        # csv_writer.writerows(data)
+        for d in data:
+            csv_file.write("\n" + sep.join(d))
+    return
