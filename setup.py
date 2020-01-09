@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 version = open("VERSION").read().strip()
 license = open("LICENSE").read().strip()

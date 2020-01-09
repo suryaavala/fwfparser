@@ -14,7 +14,9 @@ RUN pipenv install --system --deploy
 FROM base as Prod
 RUN ls | grep -vE "example" | xargs rm -r
 
-CMD [ "python3", "example/parse_example.py" ]
+CMD ["-s", "example/spec.json", "-o", "example/output.csv"]
+
+ENTRYPOINT [ "python3", "-m", "fwfparser" ]
 
 # The `Security` stage checks Prod container image for vulnerabilities using the Aqua MicroScanner. This requires providing a build-arg with your MicroScanner token
 # See: https://github.com/aquasecurity/microscanner
@@ -40,3 +42,5 @@ RUN safety check
 # if the tests fail.
 FROM test-base as Test
 RUN pytest -v
+CMD [ "-v" ]
+ENTRYPOINT [ "pytest"]
