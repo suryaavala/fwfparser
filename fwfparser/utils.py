@@ -1,7 +1,22 @@
 import json
+import random
 import sys
 import types
 import warnings
+from itertools import chain
+
+MIN_SPECS = [
+    "ColumnNames",
+    "Offsets",
+    "FixedWidthEncoding",
+    "IncludeHeader",
+    "DelimitedEncoding",
+]
+SUPPORTED_ENCODINGS = {
+    "FixedWidthEncoding": ["windows-1252", "cp1252"],
+    "DelimitedEncoding": ["utf-8"],
+}
+SPEC_HEADER = ["True", "False"]
 
 
 def valid_cp1252_charInts():
@@ -22,18 +37,6 @@ def valid_cp1252_charInts():
     return charset
 
 
-MIN_SPECS = [
-    "ColumnNames",
-    "Offsets",
-    "FixedWidthEncoding",
-    "IncludeHeader",
-    "DelimitedEncoding",
-]
-SUPPORTED_ENCODINGS = {
-    "FixedWidthEncoding": ["windows-1252", "cp1252"],
-    "DelimitedEncoding": ["utf-8"],
-}
-SPEC_HEADER = ["True", "False"]
 OPTIONAL_SPECS = {
     "Alignment": "left",
     "PaddingCharacter": " ",
@@ -42,12 +45,18 @@ OPTIONAL_SPECS = {
 
 
 def parse_spec_file(spec):
-    with open(str(spec), "r") as spec_file:
-        try:
-            specs = json.loads(spec_file.read())
-        except ValueError:
-            raise ValueError("Invalid format: Spec file")
-    return validate_specs(specs)
+    if isinstance(spec, dict):
+        # TODO: Does accept dict but this functionality is not bubbled up
+        return validate_specs(spec)
+    elif isinstance(spec, str):
+        with open(str(spec), "r") as spec_file:
+            try:
+                specs = json.loads(spec_file.read())
+            except ValueError:
+                raise ValueError("Invalid format: Spec file")
+        return validate_specs(specs)
+    else:
+        raise ValueError("spec should be dict or str")
 
 
 def validate_specs(specs=None):
@@ -80,10 +89,15 @@ def validate_specs(specs=None):
         )
     if specs["IncludeHeader"] not in SPEC_HEADER:
         raise ValueError(f"IncludeHeader can only be: {SPEC_HEADER}")
+    elif specs["IncludeHeader"].lower() == "true":
+        specs["IncludeHeader"] = True
+    else:
+        specs["IncludeHeader"] = False
     try:
         specs["Offsets"] = list(map(int, specs["Offsets"]))
     except ValueError:
         raise ValueError("Not able to convert offsets to ints")
+    specs["ColumnNames"] = list(map(str, specs["ColumnNames"]))
     for nb in range(len(specs["Offsets"])):
         if len(str(specs["ColumnNames"][nb])) > int(specs["Offsets"][nb]):
             warnings.warn(
@@ -98,6 +112,10 @@ def _parse_fwf_line(line=None, offsets=None, padding_char=" "):
         raise TypeError(f"line should be a string")
     if not isinstance(offsets, list):
         raise TypeError(f"offsets should be a list")
+    if not line:
+        # NOTE Returns an empty list if the line is empty
+        # empty rows should alteast have padding characters
+        return []
     row = []
     idx_at = 0
     for col_offset in offsets:
@@ -108,21 +126,36 @@ def _parse_fwf_line(line=None, offsets=None, padding_char=" "):
     return row
 
 
-def _lazy_read_fwf(fwf_path, encoding, offsets, padding_char):
-    return (
+def _dedup_header(header_row, rows):
+    try:
+        dup = next(rows)
+    except StopIteration:
+        return rows
+    if header_row == dup:
+        return rows
+    else:
+        return chain([dup], rows)
+    return
+
+
+def _lazy_read_fwf(fwf_path, encoding, offsets, padding_char, columnNames):
+    header = [columnNames]
+    rows = (
         _parse_fwf_line(
             line=fwf_line.strip("\n"), offsets=offsets, padding_char=padding_char
         )
         for fwf_line in open(fwf_path, "r", encoding=encoding)
     )
+    rows = _dedup_header(header[0], rows)
+    return chain(header, rows)
 
 
-def data_to_csv(
-    data, csv_path="", header=True, sep="\t", encoding=sys.getdefaultencoding()
-):
+def data_to_csv(data, csv_path="", header=True, sep="\t", encoding=None):
+    if encoding is None:
+        encoding = sys.getdefaultencoding()
     if not csv_path:
         raise ValueError("path to csv should be given")
-    if not isinstance(data, (list, types.GeneratorType)):
+    if not isinstance(data, (list, types.GeneratorType, chain)):
         raise TypeError("data must be a list or generator")
     with open(csv_path, "w", encoding=encoding) as csv_file:
         # csv_writer = csv.writer(
@@ -135,7 +168,73 @@ def data_to_csv(
         if header:
             # csv_writer.writerow(head)
             csv_file.write(sep.join(head))
+            csv_file.write("\n")
         # csv_writer.writerows(data)
         for d in data:
-            csv_file.write("\n" + sep.join(d))
+            csv_file.write(sep.join(d) + "\n")
+    return
+
+
+def _generate_fwf_row(characterSet, offsets):
+    return [
+        "".join(random.choices(characterSet, k=random.randint(0, off)))  # nosec
+        for off in offsets
+    ]
+
+
+def _lazy_generate_fwf(characterSet, offsets, columnNames, length=None):
+    if length is None:
+        length = random.randint(1, 1000)  # nosec
+    header = [columnNames]
+    rows = (
+        _generate_fwf_row(characterSet=characterSet, offsets=offsets)
+        for _ in range(length)
+    )
+    return chain(header, rows)
+
+
+def _row_to_line(row, offsets, padding_char):
+    padded_row = ""
+    for nb, text in enumerate(row):
+        text_length = len(text)
+        offset = int(offsets[nb])
+        if text_length <= offset:
+            padded_row += text + padding_char * (offset - text_length)
+        if text_length > offset:
+            padded_row += text[:offset]
+    return padded_row
+
+
+def data_to_fwf(
+    data, fwf_path="", offsets=None, header=True, padding_char="\t", encoding=None,
+):
+    if encoding is None:
+        encoding = sys.getdefaultencoding()
+    if not fwf_path:
+        raise ValueError("path to csv should be given")
+    if not isinstance(data, (list, types.GeneratorType, chain)):
+        raise TypeError("data must be a list or generator")
+    if offsets is None:
+        raise ValueError("offsets must be given")
+
+    with open(fwf_path, "w", encoding=encoding) as fwf_file:
+        # csv_writer = csv.writer(
+        #     csv_file, delimiter=sep, escapechar='//', quoting=csv.QUOTE_NONE)
+        if isinstance(data, list):
+            head = data[0]
+            data = data[1:]
+        else:
+            head = next(data)
+        if header:
+            # csv_writer.writerow(head)
+            fwf_file.write(
+                _row_to_line(row=head, offsets=offsets, padding_char=padding_char)
+            )
+            fwf_file.write("\n")
+        # csv_writer.writerows(data)
+        for d in data:
+            fwf_file.write(
+                _row_to_line(row=d, offsets=offsets, padding_char=padding_char) + "\n"
+            )
+
     return
