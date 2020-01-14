@@ -118,11 +118,13 @@ def _parse_fwf_line(line=None, offsets=None, padding_char=" "):
         # NOTE Returns an empty list if the line is empty
         # empty rows should alteast have padding characters
         return []
+    # NOTE if a line ends with padding character,
+    # then it is considered as padding character and removed
     row = []
     idx_at = 0
     for col_offset in offsets:
         row.append(
-            line[idx_at : int(col_offset) + idx_at].strip(padding_char)  # noqa: E203 \
+            line[idx_at : int(col_offset) + idx_at].rstrip(padding_char)  # noqa: E203 \
         )
         idx_at += int(col_offset)
     return row
@@ -144,7 +146,7 @@ def _lazy_read_fwf(fwf_path, encoding, offsets, padding_char, columnNames):
     header = [columnNames]
     rows = (
         _parse_fwf_line(
-            line=fwf_line.strip("\n"), offsets=offsets, padding_char=padding_char
+            line=fwf_line.rstrip("\n"), offsets=offsets, padding_char=padding_char
         )
         for fwf_line in open(fwf_path, "r", encoding=encoding)
     )
