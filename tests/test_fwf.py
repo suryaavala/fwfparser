@@ -7,6 +7,15 @@ import pytest
 from fwfparser.__main__ import main
 from fwfparser.fwf import DataFrameF, fwf_to_csv, read_fwf
 
+from fwfparser.utils import (  # isort:skip
+    _dedup_header,  # isort:skip
+    _generate_fwf_row,  # isort:skip
+    _lazy_generate_fwf,  # isort:skip
+    _lazy_read_fwf,  # isort:skip
+    _parse_fwf_line,  # isort:skip
+    _row_to_line,  # isort:skip
+)
+
 DEFAULT_OUTPUT = "sample_output.csv"
 DEFAULT_INPUT = "sample_fwf.txt"
 
@@ -19,6 +28,7 @@ TMP_CSV = "test.csv"
 TMP_FWF = "test.txt"
 TMP_SPECS = "test.json"
 
+ALPHABET = "abcdefghijklmnopqrstuvwxyz"
 # TODO tmpdir
 
 
@@ -29,7 +39,8 @@ def are_these_same(string1, string2):
     if os.path.isfile(string2):
         with open(string2, "r") as g:
             string2 = g.read()
-    # print(f"s1:{string1}.\ns2:{string2}.")
+    print(f"s1:{string1}.\ns2:{string2}.")
+    print(f"{len(string1),len(string2)}")
     return string1 == string2
 
 
@@ -144,7 +155,16 @@ class TestMainPath:
         )
         assert are_these_same(TMP_CSV, "\n")
 
-    # TODO Encoding tests?
+    def test_main_zerooffsets(self):
+        with open(TMP_FWF, "w") as t:
+            t.write("a")
+        change_these_in_valid_specs(
+            {"Offsets": ["0", "1", "0"], "ColumnNames": ["", "a", ""]}
+        )
+        main(
+            spec=TMP_SPECS, fwf=TMP_FWF, output=TMP_CSV,
+        )
+        assert are_these_same(TMP_CSV, "\ta\t\n")
 
 
 class TestReadfwf:
@@ -245,4 +265,107 @@ class TestDataFrameF:
         assert valid == generated
 
 
-# TODO what happens when a row of just padding characters
+class TestUtils:
+    def test_fwf_row_offsets(self):
+        """Test whether lengths of generated elements are less than or equal to their respective offsets
+        """
+        characterSet = ALPHABET
+        offsets = [1, 2, 3]
+        row = _generate_fwf_row(characterSet=characterSet, offsets=offsets,)
+        yes = True
+        for en, e in enumerate(row):
+            if len(e) > offsets[en]:
+                yes = False
+                break
+        assert yes
+
+    def test_fwf_line(self):
+        """Test whether length of the generated line is equal to sum of lengths of offsets
+        """
+        offsets = [1, 2, 3]
+        line = _row_to_line(row=["a", "b", "cde"], offsets=offsets, padding_char=" ")
+        assert line == "ab cde"
+        assert len(line) == sum(offsets)
+
+    def test_lazy_generate_fwf(self):
+        characterSet = ALPHABET
+        offsets = [1, 2, 3]
+        columnNames = ["a", "ab", "abc"]
+        length = 10
+
+        gen = _lazy_generate_fwf(
+            characterSet=characterSet,
+            offsets=offsets,
+            columnNames=columnNames,
+            length=length,
+        )
+        assert isinstance(gen, chain)
+
+        data = list(gen)
+        assert data[0] == columnNames
+        assert len(data) == length + 1
+
+        for d in data:
+            assert len(d) == 3
+
+    def test_lazy_read_fwf(self):
+        with open(TMP_FWF, "w", encoding="cp1252") as f:
+            f.write("aababc\naababc\n")
+        fwf_path = TMP_FWF
+        encoding = "cp1252"
+        padding_char = " "
+
+        offsets = [1, 2, 3]
+        columnNames = ["a", "ab", "abc"]
+
+        gen = _lazy_read_fwf(
+            fwf_path=fwf_path,
+            encoding=encoding,
+            offsets=offsets,
+            padding_char=padding_char,
+            columnNames=columnNames,
+        )
+        assert isinstance(gen, chain)
+
+        data = list(gen)  # row [a, ' a', 'b a']
+        assert data[0] == columnNames
+        assert data[1] == ["a", "ab", "abc"]
+        assert len(data) == 2
+        for d in data:
+            assert len(d) == 3
+
+    def test_parse_line_fails(self):
+        """Should fail if length of line is not equal to sum of offsets
+        """
+        lines = ["aababcd", "aabab"]
+        offsets = [1, 2, 3]
+        padding_char = " "
+        for line in lines:
+            with pytest.raises(ValueError) as error:
+                _parse_fwf_line(line=line, offsets=offsets, padding_char=padding_char)
+            assert (
+                str(error.value) == "Lines should be of same length as sum of offsets"
+            )
+
+    def test_parse_line(self):
+        line = "aaba c"
+        offsets = [1, 2, 3]
+        padding_char = " "
+
+        row = _parse_fwf_line(line=line, offsets=offsets, padding_char=padding_char)
+
+        assert row == ["a", "ab", "a c"]
+
+    def test_dedup_header(self):
+        header_row = ["c1", "c2", "c3"]
+        rows = [["ab", "cd", "ef"], ["gh", "ij", "kl"]]
+        gen = (_ for _ in rows)
+
+        assert rows == list(_dedup_header(header_row=header_row, rows=gen))
+
+        gen = (_ for _ in [])
+
+        assert [] == list(_dedup_header(header_row=header_row, rows=gen))
+
+        gen = chain([header_row], (_ for _ in rows))
+        assert rows == list(_dedup_header(header_row=header_row, rows=gen))

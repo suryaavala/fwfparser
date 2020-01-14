@@ -118,6 +118,8 @@ def _parse_fwf_line(line=None, offsets=None, padding_char=" "):
         # NOTE Returns an empty list if the line is empty
         # empty rows should alteast have padding characters
         return []
+    if len(line) != sum(offsets):
+        raise ValueError("Lines should be of same length as sum of offsets")
     # NOTE if a line ends with padding character,
     # then it is considered as padding character and removed
     row = []
