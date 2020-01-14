@@ -20,6 +20,11 @@ SPEC_HEADER = ["True", "False"]
 
 
 def valid_cp1252_charInts():
+    """Generates a string of valid cp1252 characters
+
+    Returns:
+        str: string of all valid cp1252 characters
+    """
     # Good resource: http://string-functions.com/encodingtable.aspx?encoding=65001&decoding=1252
     # According to: https://unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP1252.TXT
     # filter_chars = undefined_characters + \
@@ -45,6 +50,18 @@ OPTIONAL_SPECS = {
 
 
 def parse_spec_file(spec):
+    """Takes spec (as a dict or a path to spec file)
+
+    Args:
+        spec (dict, str): dict of specs or path to fwf spec file
+
+    Raises:
+        ValueError: Invalid format: Spec file, if the spec file does not meet minimum requirements
+        ValueError: spec should be dict or str
+
+    Returns:
+        specs[dict]: valid specs + additional optional specs
+    """
     if isinstance(spec, dict):
         # TODO: Does accept dict but this functionality is not bubbled up
         return validate_specs(spec)
@@ -110,6 +127,22 @@ def validate_specs(specs=None):
 
 
 def _parse_fwf_line(line=None, offsets=None, padding_char=" "):
+    """Takes string/line formatted as an fwf with given offsets and given padding char,
+    parses it and return a row (list) with each column as an item
+
+    Args:
+        line (str, optional): fwf line to be parsed. Defaults to None.
+        offsets (list[int], optional): length of each field in the fwf line. Defaults to None.
+        padding_char (str, optional): padding character used in fwf. Defaults to " ".
+
+    Raises:
+        TypeError: if the line is not a string
+        TypeError: if offsets are not a list
+        ValueError: if lines are not the same length as offsets
+
+    Returns:
+        row[list[str]]: list of strings with each of them being the value in column
+    """
     if not isinstance(line, str):
         raise TypeError(f"line should be a string")
     if not isinstance(offsets, list):
@@ -118,6 +151,8 @@ def _parse_fwf_line(line=None, offsets=None, padding_char=" "):
         # NOTE Returns an empty list if the line is empty
         # empty rows should alteast have padding characters
         return []
+    if len(line) != sum(offsets):
+        raise ValueError("Lines should be of same length as sum of offsets")
     # NOTE if a line ends with padding character,
     # then it is considered as padding character and removed
     row = []
@@ -131,6 +166,15 @@ def _parse_fwf_line(line=None, offsets=None, padding_char=" "):
 
 
 def _dedup_header(header_row, rows):
+    """Takes a header, rows and checks and removes if the first element of the rows is header
+
+    Args:
+        header_row (list[str]): list of column names - header
+        rows (generator - list[list[str]]): list of list of string - data/rows
+
+    Returns:
+        rows[chain]: deduped rows - without header
+    """
     try:
         dup = next(rows)
     except StopIteration:
@@ -139,10 +183,21 @@ def _dedup_header(header_row, rows):
         return rows
     else:
         return chain([dup], rows)
-    return
 
 
 def _lazy_read_fwf(fwf_path, encoding, offsets, padding_char, columnNames):
+    """Reads and fwf file and returns a generator of parsed data
+
+    Args:
+        fwf_path (str): path to fwf file
+        encoding (str): encoding of fwf file
+        offsets (list[str]): lengths of each column in fwf
+        padding_char (str): padding character uses in fwf to fill gaps
+        columnNames (list[str]): names of each column in fwf
+
+    Returns:
+        rows[chain]: generator of header + data
+    """
     header = [columnNames]
     rows = (
         _parse_fwf_line(
@@ -155,6 +210,19 @@ def _lazy_read_fwf(fwf_path, encoding, offsets, padding_char, columnNames):
 
 
 def data_to_csv(data, csv_path="", header=True, sep="\t", encoding=None):
+    """Writes data (list/generator) to a csv file
+
+    Args:
+        data (generator/list/chain): data to be written
+        csv_path (str, optional): path to generate csv file at. Defaults to "".
+        header (bool, optional): boolean to include header or not. Defaults to True.
+        sep (str, optional): delimiter to be used in the csv. Defaults to "\t".
+        encoding (str, optional): encoding of the csv file. Defaults to None.
+
+    Raises:
+        ValueError: if a path to csv is not given
+        TypeError: if the data is not a list or generator/chain
+    """
     if encoding is None:
         encoding = sys.getdefaultencoding()
     if not csv_path:
@@ -180,6 +248,15 @@ def data_to_csv(data, csv_path="", header=True, sep="\t", encoding=None):
 
 
 def _generate_fwf_row(characterSet, offsets):
+    """Generates a random fwf line
+
+    Args:
+        characterSet (str): valid to pick characters from
+        offsets (list[int]): lengths of each field
+
+    Returns:
+        line(str): line formatted in fwf
+    """
     return [
         "".join(random.choices(characterSet, k=random.randint(0, off)))  # nosec
         for off in offsets

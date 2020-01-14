@@ -11,11 +11,11 @@ def read_fwf(spec_path, fwf_path, *args, **kwargs):
     """Takes specs and fwf file, parses it and returns a generator with parsed data
 
     Args:
-        spec_path ([type]): [description]
-        fwf_path ([type]): [description]
+        spec_path (str): path to fwf spec file
+        fwf_path (str): path to fwf file
 
     Returns:
-        [type]: [description]
+        rows [generator]: returns a generate with rows parsed from fwf file
     """
     fwf_specs = parse_spec_file(spec=spec_path)
     rows = _lazy_read_fwf(
@@ -32,10 +32,10 @@ def fwf_to_csv(spec_path, fwf_path, csv_path, sep="\t"):
     """Takes specs, fwf, csv_path, reads fwf and converts to csv
 
     Args:
-        spec_path ([type]): [description]
-        fwf_path ([type]): [description]
-        csv_path ([type]): [description]
-        sep (str, optional): [description]. Defaults to "\t".
+        spec_path (str): path to fwf spec file
+        fwf_path (str): path to fwf file
+        csv_path (str): path to csv file to write
+        sep (str, optional): delimiter used in the csv file Defaults to "\t".
     """
     fwf_specs = parse_spec_file(spec=spec_path)
     rows = read_fwf(spec_path=spec_path, fwf_path=fwf_path)
@@ -50,6 +50,15 @@ def fwf_to_csv(spec_path, fwf_path, csv_path, sep="\t"):
 
 
 def generate_fwf_data(spec_path, length=None):
+    """Takes a specs, number of rows and generates a random fwf data of given number of rows
+
+    Args:
+        spec_path (str): path to fwf spec file
+        length (int, optional): number of rows to generate. Defaults to None.
+
+    Returns:
+        rows[genrator]: random fwf data as per specs, of given length
+    """
     fwf_specs = parse_spec_file(spec=spec_path)
     return _lazy_generate_fwf(
         characterSet=fwf_specs["characterSet"],
@@ -60,6 +69,13 @@ def generate_fwf_data(spec_path, length=None):
 
 
 def generate_fwf_file(spec_path, fwf_path, length=None):
+    """Takes specs, fwf path, length and create a random fwf file in the given path of given length
+
+    Args:
+        spec_path (str): path to fwf spec file
+        fwf_path (str): path to fwf file
+        length (int, optional): number of rows of data to generate. Defaults to None.
+    """
     fwf_specs = parse_spec_file(spec=spec_path)
     rows = generate_fwf_data(spec_path=spec_path, length=length,)
 
@@ -75,7 +91,7 @@ def generate_fwf_file(spec_path, fwf_path, length=None):
 
 
 class DataFrameF:
-    """DataFrame to store Class
+    """DataFrame to store Data
     """
 
     def __init__(self, spec_path=None):
@@ -94,7 +110,6 @@ class DataFrameF:
             return
         else:
             raise SyntaxError("Specs are neither found in Df nor given.")
-        return
 
     def read_fwf(
         self, fwf_path="", spec_path="",

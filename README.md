@@ -1,3 +1,5 @@
+[![Build](https://github.com/suryaavala/fwfparser/workflows/Test%20Build%20and%20Publish/badge.svg)](https://github.com/suryaavala/fwfparser/workflows/Test%20Build%20and%20Publish/badge.svg)
+
 ## fwfparser
 
 A python package to parse fixed width files
@@ -147,3 +149,15 @@ Repo structure is:
 └── test_spec_valid.json
 
 ```
+
+## Requirements
+
+## Tests
+
+## CLI
+
+## Docker
+
+## Misc
+
+### Dev Setup
