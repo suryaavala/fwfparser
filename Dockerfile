@@ -10,11 +10,10 @@ COPY . .
 RUN pipenv install --system --deploy
 
 # The `Prod` stage is push to dockerhub ang tagged as latest if all tests/checks pass in ci without failure - cleaning unnecessary files from base here
-# The resulting image will parse an example using example/parse_example.py
+# The resulting image will parse an example using fwfparser/__main__.py
 FROM base as Prod
-RUN ls | grep -vE "example" | xargs rm -r
-
-CMD ["-s", "example/spec.json", "-o", "example/output.csv"]
+# RUN ls | grep -vE "example" | xargs rm -r
+RUN ls | xargs rm -r
 
 ENTRYPOINT [ "python3", "-m", "fwfparser" ]
 

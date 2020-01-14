@@ -42,6 +42,10 @@ def main(spec, fwf=None, output=None, delimiter="\t"):
 if __name__ == "__main__":
     # python -m fixwidth data.layout data1.txt data2.txt
     import argparse
+    import codecs
+
+    def unescaped_str(arg_str):
+        return codecs.decode(str(arg_str), "unicode_escape")
 
     argp = argparse.ArgumentParser(
         prog="fwfparser",
@@ -57,7 +61,9 @@ if __name__ == "__main__":
         help='Path to fwf data file \
         (default - generates a random fwf at "./sample_fwf.txt")',
     )
-    argp.add_argument("-d", "--delimiter", default="\t", help="Field separator")
+    argp.add_argument(
+        "-d", "--delimiter", type=unescaped_str, default="\t", help="Field separator"
+    )
     argp.add_argument(
         "-o",
         "--output",

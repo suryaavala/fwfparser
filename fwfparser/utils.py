@@ -103,6 +103,8 @@ def validate_specs(specs=None):
             warnings.warn(
                 f"{specs['ColumnNames'][nb]} is larger than it's offset, so chopping it off!"
             )
+        if specs["Offsets"][nb] < 0:
+            raise ValueError("Offsets can not be negative")
     OPTIONAL_SPECS.update(specs)
     return OPTIONAL_SPECS
 
