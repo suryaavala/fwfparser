@@ -1,5 +1,4 @@
-[![Build](https://github.com/suryaavala/fwfparser/workflows/Test%20Build%20and%20Publish/badge.svg)](https://github.com/suryaavala/fwfparser/workflows/Test%20Build%20and%20Publish/badge.svg)
-
+[![Build](https://github.com/suryaavala/fwfparser/workflows/Test%20Build%20and%20Publish/badge.svg)](https://github.com/suryaavala/fwfparser/workflows/Test%20Build%20and%20Publish/badge.svg) [![Total alerts](https://img.shields.io/lgtm/alerts/g/suryaavala/fwfparser.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/suryaavala/fwfparser/alerts/) [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/suryaavala/fwfparser.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/suryaavala/fwfparser/context:python)
 ## fwfparser
 
 A python package to parse fixed width files
